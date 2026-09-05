@@ -51,3 +51,11 @@ jobs:
       fail-fast: true
     uses: ./.github/workflows/build-nothing-phone-1-pixelos-a16.yml
     secrets: inherit
+
+   # Samsung
+  build-samsung-note10plus-oneui-a15:
+    name: "Samsung Note 10 Plus (OneUI A15)"
+    strategy:
+      fail-fast: true
+    uses: ./.github/workflows/build-samsung-note10plus-oneui-a15.yml
+    secrets: inherit
