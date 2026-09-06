@@ -6,48 +6,49 @@ on:
 
 env:
   # Device env
-  DEVICE_NAME: "samsung_note_10plus"
-  DEVICE_CODENAME: "d2s"
+  DEVICE_NAME : "samsung_note_10plus"
+  DEVICE_CODENAME : "d2s"
 
-  CUSTOM_CMDS: "CLANG_TRIPLE=aarch64-linux-gnu-"
-  EXTRA_CMDS: "LLVM=1 LLVM_IAS=1"
+  CUSTOM_CMDS : "CLANG_TRIPLE=aarch64-linux-gnu-"
+  EXTRA_CMDS : "LLVM=1 LLVM_IAS=1"
 
-  KERNEL_SOURCE: "https://github.com/maelmsss/exynos982x_kernel.git"
-  KERNEL_BRANCH: "main"
+  KERNEL_SOURCE : "https://github.com/maelmsss/exynos982x_kernel.git"
+  KERNEL_BRANCH : "main"
 
-  CLANG_SOURCE: "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz"
-  CLANG_BRANCH: ""
+  CLANG_SOURCE : "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/main/clang-r547379.tar.gz"
+  CLANG_BRANCH : ""
 
-  GCC_GNU: false
-  GCC_64_SOURCE: ""
-  GCC_64_BRANCH: ""
-  GCC_32_SOURCE: ""
-  GCC_32_BRANCH: ""
+  GCC_GNU : false
+  GCC_64_SOURCE : ""
+  GCC_64_BRANCH : ""
+  GCC_32_SOURCE : ""
+  GCC_32_BRANCH : ""
+
 
   DEFCONFIG_SOURCE: ""
-  DEFCONFIG_NAME: "exynos9820_defconfig"
+  DEFCONFIG_NAME : "exynos9820_defconfig"
   DEFCONFIG_ORIGIN_IMAGE: ""
   DEFCONFIG_FROM_BOOT: false
 
-  KERNELSU_SOURCE: ""
-  KERNELSU_BRANCH: ""
+  KERNELSU_SOURCE : ""
+  KERNELSU_BRANCH : ""
 
-  KERNELSU_AUTO_GET: "true"
-  KERNELSU_AUTO_FORK: "xxksu" # xxksu, rsuntk , next, resukisu and sukisu
+  KERNELSU_AUTO_GET : "true"
+  KERNELSU_AUTO_FORK : "xxksu" # xxksu, rsuntk , next, resukisu and sukisu
 
-  SUSFS_ENABLE: true
-  SUSFS_FIXED: true
-  SUSFS_TRY_UMOUNT: true
+  SUSFS_ENABLE : true
+  SUSFS_FIXED : true
+  SUSFS_TRY_UMOUNT : true
 
-  AK3_SOURCE: "https://github.com/osm0sis/AnyKernel3.git"
-  AK3_BRANCH: "master"
+  AK3_SOURCE : "https://github.com/osm0sis/AnyKernel3.git"
+  AK3_BRANCH : "master"
 
-  BOOT_SOURCE: ""
+  BOOT_SOURCE : ""
 
-  NEED_DTBO: false
-  NEED_SAFE_DTBO: false
+  NEED_DTBO : false
+  NEED_SAFE_DTBO : false
 
-  ROM_TEXT: "oneui_a15"
+  ROM_TEXT : "oneui_a15"
 
   # Other env
   PYTHON_VERSION: "3" # Only 2(Ubuntu 22.04 and Ubuntu 20.04) or 3(Any OS Versions).
@@ -65,18 +66,18 @@ env:
 
   REKERNEL_ENABLE: "false" # if u need Re:Kernel.
   DROIDSPACES_ENABLE: "false" # if u need Droidspaces or LXC/Docker.
-  NOMOUNT_ENABLE: "true" # if u need NoMount.
+  NOMOUNT_ENABLE: "false" # if u need NoMount.
 
   HOOK_METHOD: "syscall" # Manual hook method ->  syscall.
 
-  KERNEL_PATCH: "false" # If your kernel version is <= 4.9, you have the option of enabling the patch to patch the kernel_write and kernel_read functions.
+  KERNEL_PATCH: "true" # If your kernel version is <= 4.9, you have the option of enabling the patch to patch the kernel_write and kernel_read functions.
 
   KPM_ENABLE: "false" # Anyone devices. 
   KPM_INLINE: "false" # Only use it for SukiSU-Ultra.
   KPM_KPATCH_NEXT: "false" # If u want hook KPatch-Next in build step.
   KPM_PATCH_SOURCE: "https://raw.githubusercontent.com/ShirkNeko/SukiSU_patch/refs/heads/main/kpm/patch_linux" # If u want to use KPM Inline,so you need set patch exec file source -> raw.githubusercontent.com/Test/Test/patch .
 
-  BASEBAND_GUARD_ENABLE: "false" #if u want prevent unauthorized writes to critical partitions/device nodes.
+  BASEBAND_GUARD_ENABLE: "true" #if u want prevent unauthorized writes to critical partitions/device nodes.
   BASEBAND_GUARD_BOOT: "false" #if u want to protect boot partition.
 
   GENERATE_DTB: "false" # if u kernel need DTB , but cannot auto generate it. (Only Anykernel3).
@@ -111,6 +112,7 @@ jobs:
           cp -r $GITHUB_WORKSPACE/Patches /tmp/Patches_Backup
           echo "[+] Yedekleme tamam. /tmp/Patches_Backup içeriği:"
           ls -la /tmp/Patches_Backup
+      # ========================================
 
       - name: 🔍 List Patches directory
         shell: bash
@@ -118,43 +120,11 @@ jobs:
           ls -la $GITHUB_WORKSPACE/Patches/ || echo "Patches Workspace'de bulunamadı (Zaten yedekledik)"
           echo "---"
           find /tmp/Patches_Backup -maxdepth 2 -type f
-
       - name: ⌛️ Compilation environment preparation
         uses: ./.github/workflows/build-env
 
       - name: ⚙️ Get neccssary tools
         uses: ./.github/workflows/build-ready
-
-      - name: 🛠️ Fix SuSFS Linker Error (kallsyms)
-        shell: bash
-        run: |
-          cd $GITHUB_WORKSPACE/device_kernel
-          
-          echo "[+] Eksik susfs_starts_with fonksiyonu kallsyms.c'nin BAŞINA ekleniyor..."
-          
-          # 1. Kurtarıcı fonksiyonu geçici dosyaya yaz
-          cat << 'EOF' > kallsyms_fix.c
-          #include <linux/types.h>
-          
-          /* SuSFS Linker Fix (Weak Definition) */
-          bool susfs_starts_with(const char *str, const char *prefix);
-          __attribute__((weak)) bool susfs_starts_with(const char *str, const char *prefix) {
-              while (*prefix) {
-                  if (*prefix++ != *str++)
-                      return false;
-              }
-              return true;
-          }
-          
-          EOF
-          
-          # 2. Orijinal kallsyms.c içeriğini bu kodun altına ekle
-          cat kernel/kallsyms.c >> kallsyms_fix.c
-          
-          # 3. Eski dosyanın üzerine yaz
-          mv kallsyms_fix.c kernel/kallsyms.c
-          
-          echo "[+] Linker yaması başarıyla en üste uygulandı!"
 
       - name: 🚀 Apply Custom Kernel Patches
         shell: bash
@@ -190,7 +160,7 @@ jobs:
           done
           
           echo "[+] Tüm yamalar kusursuz şekilde işlendi!"
-
+          
       - name: 🛠️ Fix sysctl.c Undeclared Identifier
         shell: bash
         run: |
@@ -201,7 +171,6 @@ jobs:
           sed -i '/static struct ctl_table kern_table\[\] = {/i static int three = 3;' kernel/sysctl.c
           
           echo "[+] Değişken tekil olarak başarıyla enjekte edildi."
-
       - name: ⚖️ Apply & Fix SBalance Patch (4.14 Backport)
         shell: bash
         run: |
@@ -253,7 +222,7 @@ jobs:
           echo -e "\n\t}\n}" >> kernel/irq/sbalance.c
           
           echo "[+] SBalance yaması ve Backport onarımı kusursuz tamamlandı!"
-
+      
       - name: 🚀 Apply Native 4.14 Maple I/O Scheduler & Fixes
         shell: bash
         run: |
@@ -280,6 +249,7 @@ jobs:
               echo "obj-\$(CONFIG_IOSCHED_MAPLE) += maple-iosched.o" >> block/Makefile
           fi
           
+          
           echo "[+] Maple, Defconfig dosyalarına işleniyor ve varsayılan yapılıyor!"
           find arch/arm64/configs -type f -name "*defconfig" -exec sh -c '
               echo "" >> "{}"
@@ -288,40 +258,7 @@ jobs:
           ' \;
           
           echo "[+] 4.14 Native Maple ve ek yamaları başarıyla entegre edildi!"
-
-      - name: ⚡ Apply Additional Optimization Patches (other_opt)
-        shell: bash
-        run: |
-          cd $GITHUB_WORKSPACE/device_kernel
           
-          echo "[+] Optimizasyon yamaları geçici olarak klonlanıyor..."
-          git clone --depth=1 https://github.com/fatalcoder524/kernel_patches_additional.git /tmp/opt_patches
-          
-          echo "[+] other_opt klasöründeki yamalar sırayla test edilip uygulanıyor..."
-          for patch_file in /tmp/opt_patches/other_opt/*.patch; do
-              echo "--------------------------------------------------------"
-              echo "[>] İşleniyor: $(basename "$patch_file")"
-              
-              # ZEKİ FİLTRE: Eğer yama cpufreq.c'yi değiştiriyorsa veya new_data içeriyorsa atla!
-              if grep -q "get_cpumask_min_limit" "$patch_file" || grep -q "cpufreq.c" "$patch_file"; then
-                  echo "[-] UYARI: $(basename "$patch_file") yaması 4.14 cpufreq API'si ile uyumsuz. Pas geçiliyor!"
-                  continue
-              fi
-              
-              # Windows/Linux satır sonu (CRLF) uyumsuzluklarını temizle
-              sed -i 's/\r$//' "$patch_file"
-              
-              # Yamayı uygula
-              patch -p1 < "$patch_file" || echo "[-] UYARI: Yama uygulanamadı, pas geçildi!"
-          done
-          echo "--------------------------------------------------------"
-          
-          echo "[+] Temizlik yapılıyor..."
-          rm -rf /tmp/opt_patches
-          find . -type f -name "*.rej" -delete
-          
-          echo "[+] Uyumlu optimizasyon yamaları başarıyla entegre edildi!"
-
       - name: 🚀 Enable FQ-CoDel (Network Scheduler)
         shell: bash
         run: |
@@ -347,8 +284,7 @@ jobs:
               fi
           ' \;
           
-          echo "[+] FQ-CoDel başarıyla defconfig'e işlendi!"     
-
+          echo "[+] FQ-CoDel başarıyla defconfig'e işlendi!"    
       - name: 🚀 Set CUBIC as Default TCP Congestion Control
         shell: bash
         run: |
@@ -403,7 +339,6 @@ jobs:
           fi
     
       - name: 🧩 Patch Kernel of NoMount (master branch, setup.sh)
-        if: env.NOMOUNT_ENABLE == 'true'
         shell: bash
         run: |
           set -x
@@ -429,29 +364,12 @@ jobs:
           
       - name: 💿 Patch Kernel of Droidspaces
         uses: ./.github/workflows/patch-droidspaces
-            
+           
       - name: ➕ Add Non-GKI configs to defconfig
         shell: bash
         run: |
           cd $GITHUB_WORKSPACE/device_kernel
           DEFCONFIG_FILE="arch/arm64/configs/${{ env.DEFCONFIG_NAME }}"
-          
-          echo "[+] RKP, Knox, TIMA ve DEFEX Güvenlik Önlemleri Kapatılıyor..."
-          sed -i 's/CONFIG_RKP_KDP=y/# CONFIG_RKP_KDP is not set/g' "$DEFCONFIG_FILE"
-          sed -i 's/CONFIG_RKP_CFP=y/# CONFIG_RKP_CFP is not set/g' "$DEFCONFIG_FILE"
-          sed -i 's/CONFIG_UH_RKP=y/# CONFIG_UH_RKP is not set/g' "$DEFCONFIG_FILE"
-          sed -i 's/CONFIG_PROCA=y/# CONFIG_PROCA is not set/g' "$DEFCONFIG_FILE"
-          sed -i 's/CONFIG_TIMA=y/# CONFIG_TIMA is not set/g' "$DEFCONFIG_FILE"
-          sed -i 's/CONFIG_KNOX_KAP=y/# CONFIG_KNOX_KAP is not set/g' "$DEFCONFIG_FILE"
-          sed -i 's/CONFIG_SECURITY_DSMSA=y/# CONFIG_SECURITY_DSMSA is not set/g' "$DEFCONFIG_FILE"
-          
-          echo "[+] Samsung Kısıtlamaları (Restrict & Defex) Kaldırılıyor..."
-          sed -i 's/CONFIG_SEC_DEFEX=y/# CONFIG_SEC_DEFEX is not set/g' "$DEFCONFIG_FILE"
-          sed -i 's/CONFIG_SECURITY_DEFEX=y/# CONFIG_SECURITY_DEFEX is not set/g' "$DEFCONFIG_FILE"
-          sed -i 's/CONFIG_SEC_RESTRICT=y/# CONFIG_SEC_RESTRICT is not set/g' "$DEFCONFIG_FILE"
-          sed -i 's/CONFIG_SEC_RESTRICT_SETUID=y/# CONFIG_SEC_RESTRICT_SETUID is not set/g' "$DEFCONFIG_FILE"
-          sed -i 's/CONFIG_SEC_RESTRICT_FORK=y/# CONFIG_SEC_RESTRICT_FORK is not set/g' "$DEFCONFIG_FILE"
-          sed -i 's/CONFIG_SEC_RESTRICT_ROOTING=y/# CONFIG_SEC_RESTRICT_ROOTING is not set/g' "$DEFCONFIG_FILE"
           
           cat >> "$DEFCONFIG_FILE" << 'EOF'
           
@@ -476,9 +394,40 @@ jobs:
           CONFIG_DEVFREQ_BOOST=y
           
           EOF
+          
       - name: 🔒 Patch Kernel of Baseband Guard
         uses: ./.github/workflows/patch-baseband-guard
-        
+
+      - name: 🛠️ Fix SuSFS Linker Error (kallsyms)
+        shell: bash
+        run: |
+          cd $GITHUB_WORKSPACE/device_kernel
+          
+          echo "[+] Eksik susfs_starts_with fonksiyonu kallsyms.c'nin BAŞINA ekleniyor..."
+          
+          # 1. Kurtarıcı fonksiyonu geçici dosyaya yaz
+          cat << 'EOF' > kallsyms_fix.c
+          #include <linux/types.h>
+          
+          /* SuSFS Linker Fix (Weak Definition) */
+          bool susfs_starts_with(const char *str, const char *prefix);
+          __attribute__((weak)) bool susfs_starts_with(const char *str, const char *prefix) {
+              while (*prefix) {
+                  if (*prefix++ != *str++)
+                      return false;
+              }
+              return true;
+          }
+          
+          EOF
+          
+          # 2. Orijinal kallsyms.c içeriğini bu kodun altına ekle
+          cat kernel/kallsyms.c >> kallsyms_fix.c
+          
+          # 3. Eski dosyanın üzerine yaz
+          mv kallsyms_fix.c kernel/kallsyms.c
+          
+          echo "[+] Linker yaması başarıyla en üste uygulandı!"
       - name: 🚀 Build Process
         uses: ./.github/workflows/build-process
           
