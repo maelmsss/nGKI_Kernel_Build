@@ -301,54 +301,6 @@ jobs:
           mv kallsyms_fix.c kernel/kallsyms.c
           
           echo "[+] Linker yaması başarıyla en üste uygulandı!"
-
-      - name: 🛡️ Inject Fake Access Rules to KernelSU V2
-        shell: python
-        run: |
-          import os
-          import re
-          
-          target = None
-          for root, dirs, files in os.walk("."):
-              if "selinux_hide.c" in files:
-                  target = os.path.join(root, "selinux_hide.c")
-                  break
-          
-          if not target:
-              print("[-] HATA: selinux_hide.c bulunamadi!")
-              exit(1)
-              
-          with open(target, "r", encoding="utf-8") as f:
-              content = f.read()
-          
-          inject = """
-              /* ===== EKLENEN KESIN BYPASS ===== */
-              if (strcmp(scon, "u:r:fsck_untrusted:s0") == 0 && strcmp(tcon, "u:r:fsck_untrusted:s0") == 0) {
-                  length = scnprintf(buf, SIMPLE_TRANSACTION_LIMIT, "%x %x %x %x %u %x", 0, 0xffffffff, 0, 0xffffffff, 1, 0);
-                  goto out;
-              }
-              if (strcmp(scon, "u:r:shell:s0") == 0 && strcmp(tcon, "u:r:su:s0") == 0) {
-                  length = scnprintf(buf, SIMPLE_TRANSACTION_LIMIT, "%x %x %x %x %u %x", 0, 0xffffffff, 0, 0xffffffff, 1, 0);
-                  goto out;
-              }
-              if (strcmp(scon, "u:r:adbd:s0") == 0 && strcmp(tcon, "u:r:adbroot:s0") == 0) {
-                  length = scnprintf(buf, SIMPLE_TRANSACTION_LIMIT, "%x %x %x %x %u %x", 0, 0xffffffff, 0, 0xffffffff, 1, 0);
-                  goto out;
-              }
-              /* ================================ */
-          """
-          
-          pattern = re.compile(r'(if\s*\(\s*sscanf\s*\(\s*buf,\s*"%s\s+%s\s+%hu",\s*scon,\s*tcon,\s*&tclass\s*\)\s*!=\s*3\s*\)\s*goto\s*out;)')
-          
-          if pattern.search(content):
-              content = pattern.sub(r'\g<1>\n' + inject, content, count=1)
-              with open(target, "w", encoding="utf-8") as f:
-                  f.write(content)
-              print("[+] V2 Bypass kodu basariyla enjekte edildi!")
-          else:
-              print("[-] HATA: sscanf satiri bulunamadi.")
-              exit(1)
-              
               
       - name: 🚀 Build Process
         uses: ./.github/workflows/build-process
