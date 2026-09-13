@@ -67,7 +67,7 @@ env:
   DROIDSPACES_ENABLE: "false" # if u need Droidspaces or LXC/Docker.
   NOMOUNT_ENABLE: "false" # if u need NoMount.
 
-  HOOK_METHOD: "syscall" # Manual hook method ->  syscall.
+  HOOK_METHOD: "" # Manual hook method ->  syscall.
 
   KERNEL_PATCH: "false" # If your kernel version is <= 4.9, you have the option of enabling the patch to patch the kernel_write and kernel_read functions.
 
